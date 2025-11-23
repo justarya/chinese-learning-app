@@ -1,4 +1,4 @@
-import { BookOpen, GraduationCap, MessageSquare, BookMarked, Languages, ArrowRightLeft } from 'lucide-react'
+import { BookOpen, GraduationCap, MessageSquare, BookMarked, Languages, ArrowRightLeft, Upload } from 'lucide-react'
 
 function HomeView({ vocabList, studiedCards, scores, navigateTo }) {
   const totalVocab = vocabList.length
@@ -33,6 +33,14 @@ function HomeView({ vocabList, studiedCards, scores, navigateTo }) {
 
       {/* Action Buttons */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button
+          onClick={() => navigateTo('import')}
+          className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-lg shadow-md p-6 transition-all transform hover:scale-105"
+        >
+          <Upload className="w-12 h-12 mx-auto mb-3" />
+          <div className="text-xl font-semibold">Import Notes (AI)</div>
+        </button>
+
         <button
           onClick={() => navigateTo('notes')}
           className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg shadow-md p-6 transition-all transform hover:scale-105"
