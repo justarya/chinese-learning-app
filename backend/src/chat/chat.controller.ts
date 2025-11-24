@@ -25,7 +25,12 @@ export class ChatController {
 
   @Post('sessions')
   async createSession(@Req() req: any, @Body() createSessionDto: CreateSessionDto) {
-    return this.chatService.createSession(req.user.id, createSessionDto.title);
+    return this.chatService.createSession(
+      req.user.id,
+      createSessionDto.title,
+      createSessionDto.scenario,
+      createSessionDto.vocabularyIds,
+    );
   }
 
   @Get('sessions/:id')
@@ -45,11 +50,18 @@ export class ChatController {
       req.user.id,
       sendMessageDto.content,
       sendMessageDto.sessionId,
+      sendMessageDto.scenario,
+      sendMessageDto.vocabularyIds,
     );
   }
 
   @Get('sessions/:id/messages')
   async getMessages(@Req() req: any, @Param('id') id: string) {
     return this.chatService.getSessionMessages(id, req.user.id);
+  }
+
+  @Get('sessions/:id/vocabulary')
+  async getSessionVocabulary(@Req() req: any, @Param('id') id: string) {
+    return this.chatService.getSessionVocabulary(id, req.user.id);
   }
 }

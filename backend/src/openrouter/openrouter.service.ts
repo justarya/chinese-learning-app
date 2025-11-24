@@ -386,4 +386,122 @@ Keep the explanation clear, educational, and practical for language learners. Us
       throw new Error('Failed to get AI response');
     }
   }
+
+  async checkGrammar(
+    chineseText: string,
+  ): Promise<{ hasError: boolean; correction: string; tips: string }> {
+    const prompt = `You are a Chinese language teacher. Evaluate this Chinese text for grammar errors:
+
+"${chineseText}"
+
+Check for:
+1. Grammar mistakes
+2. Incorrect word usage
+3. Unnatural phrasing
+4. Tone/context appropriateness
+
+Return ONLY a valid JSON object (no markdown, no code blocks):
+{
+  "hasError": true,
+  "correction": "Corrected version if there are errors, or empty string if correct",
+  "tips": "Brief explanation of errors and how to fix them, or empty string if correct"
+}
+
+OR if the text is correct:
+
+{
+  "hasError": false,
+  "correction": "",
+  "tips": "Great job! Your Chinese is correct."
+}`;
+
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/chat/completions`,
+        {
+          model: this.model,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+          max_tokens: 400,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': this.configService.get('FRONTEND_URL'),
+            'X-Title': 'Chinese Learning App',
+          },
+        },
+      );
+
+      const content = response.data.choices[0].message.content;
+      this.logger.log('Grammar check result:', content);
+
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Invalid response format from AI');
+      }
+
+      return JSON.parse(jsonMatch[0]);
+    } catch (error) {
+      this.logger.error('Error checking grammar:', error.message);
+      throw new Error('Failed to check grammar');
+    }
+  }
+
+  async chatWithScenario(
+    messages: Array<{ role: string; content: string }>,
+    scenario: string,
+    vocabularyList: Array<{ chinese: string; pinyin: string; english: string }>,
+  ): Promise<string> {
+    const vocabContext = vocabularyList
+      .map((v) => `${v.chinese} (${v.pinyin}) - ${v.english}`)
+      .join(', ');
+
+    const systemMessage = {
+      role: 'system',
+      content: `You are a Chinese language practice partner.
+
+Scenario: ${scenario}
+
+Focus vocabulary to use naturally in conversation: ${vocabContext}
+
+Your goals:
+1. Have a natural conversation in the scenario context
+2. Use the provided vocabulary words naturally when appropriate
+3. Respond primarily in Chinese with pinyin and English translations
+4. Be encouraging and educational
+5. Keep responses concise (2-3 sentences)
+
+Format your responses like this:
+Chinese text here
+Pīnyīn version here
+English translation here`,
+    };
+
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/chat/completions`,
+        {
+          model: this.model,
+          messages: [systemMessage, ...messages.slice(-10)],
+          temperature: 0.7,
+          max_tokens: 600,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': this.configService.get('FRONTEND_URL'),
+            'X-Title': 'Chinese Learning App',
+          },
+        },
+      );
+
+      return response.data.choices[0].message.content;
+    } catch (error) {
+      this.logger.error('Error in scenario chat:', error.message);
+      throw new Error('Failed to get AI response');
+    }
+  }
 }

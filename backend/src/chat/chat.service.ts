@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { ChatSession } from './chat-session.entity';
 import { ChatMessage } from './chat-message.entity';
+import { Vocabulary } from '../vocabulary/vocabulary.entity';
 import { OpenRouterService } from '../openrouter/openrouter.service';
 
 @Injectable()
@@ -12,13 +13,22 @@ export class ChatService {
     private sessionRepository: Repository<ChatSession>,
     @InjectRepository(ChatMessage)
     private messageRepository: Repository<ChatMessage>,
+    @InjectRepository(Vocabulary)
+    private vocabularyRepository: Repository<Vocabulary>,
     private openRouterService: OpenRouterService,
   ) {}
 
-  async createSession(userId: string, title?: string): Promise<ChatSession> {
+  async createSession(
+    userId: string,
+    title?: string,
+    scenario?: string,
+    vocabularyIds?: string[],
+  ): Promise<ChatSession> {
     const session = this.sessionRepository.create({
       userId,
-      title: title || 'New Conversation',
+      title: title || `${scenario || 'Conversation'}`,
+      scenario: scenario || null,
+      vocabularyIds: vocabularyIds || [],
     });
 
     return this.sessionRepository.save(session);
@@ -55,23 +65,40 @@ export class ChatService {
     userId: string,
     content: string,
     sessionId?: string,
-  ): Promise<{ userMessage: ChatMessage; aiMessage: ChatMessage }> {
+    scenario?: string,
+    vocabularyIds?: string[],
+  ): Promise<{ userMessage: ChatMessage; aiMessage: ChatMessage; session: ChatSession }> {
     // Create or get session
     let session: ChatSession;
     if (sessionId) {
       session = await this.findSession(sessionId, userId);
     } else {
-      // Auto-generate title from first message
-      const title = content.substring(0, 50) + (content.length > 50 ? '...' : '');
-      session = await this.createSession(userId, title);
+      // Auto-generate title from scenario or first message
+      const title = scenario || content.substring(0, 50) + (content.length > 50 ? '...' : '');
+      session = await this.createSession(userId, title, scenario, vocabularyIds);
     }
 
-    // Save user message
+    // Check grammar if user message contains Chinese characters
+    const hasChinese = /[\u4e00-\u9fa5]/.test(content);
+    let grammarResult = null;
+    if (hasChinese) {
+      try {
+        grammarResult = await this.openRouterService.checkGrammar(content);
+      } catch (error) {
+        // If grammar check fails, continue without it
+        console.error('Grammar check failed:', error);
+      }
+    }
+
+    // Save user message with grammar info
     const userMessage = this.messageRepository.create({
       sessionId: session.id,
       userId,
       role: 'user',
       content,
+      hasGrammarError: grammarResult?.hasError || false,
+      grammarCorrection: grammarResult?.correction || null,
+      grammarTips: grammarResult?.tips || null,
     });
     await this.messageRepository.save(userMessage);
 
@@ -88,8 +115,29 @@ export class ChatService {
       content: msg.content,
     }));
 
-    // Get AI response
-    const aiResponse = await this.openRouterService.chatWithAI(messages);
+    // Get AI response based on context
+    let aiResponse: string;
+    if (session.scenario && session.vocabularyIds && session.vocabularyIds.length > 0) {
+      // Get vocabulary for scenario-based chat
+      const vocabulary = await this.vocabularyRepository.find({
+        where: {
+          id: In(session.vocabularyIds),
+        },
+      });
+
+      aiResponse = await this.openRouterService.chatWithScenario(
+        messages,
+        session.scenario,
+        vocabulary.map((v) => ({
+          chinese: v.chinese,
+          pinyin: v.pinyin,
+          english: v.english,
+        })),
+      );
+    } else {
+      // Regular chat
+      aiResponse = await this.openRouterService.chatWithAI(messages);
+    }
 
     // Save AI message
     const aiMessage = this.messageRepository.create({
@@ -104,7 +152,7 @@ export class ChatService {
     session.updatedAt = new Date();
     await this.sessionRepository.save(session);
 
-    return { userMessage, aiMessage };
+    return { userMessage, aiMessage, session };
   }
 
   async getSessionMessages(
@@ -116,6 +164,23 @@ export class ChatService {
     return this.messageRepository.find({
       where: { sessionId: session.id },
       order: { createdAt: 'ASC' },
+    });
+  }
+
+  async getSessionVocabulary(
+    sessionId: string,
+    userId: string,
+  ): Promise<Vocabulary[]> {
+    const session = await this.findSession(sessionId, userId);
+
+    if (!session.vocabularyIds || session.vocabularyIds.length === 0) {
+      return [];
+    }
+
+    return await this.vocabularyRepository.find({
+      where: {
+        id: In(session.vocabularyIds),
+      },
     });
   }
 }

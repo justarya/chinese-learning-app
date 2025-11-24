@@ -28,6 +28,15 @@ export class ChatMessage {
   @Column({ type: 'text' })
   content: string;
 
+  @Column({ type: 'boolean', default: false, name: 'has_grammar_error' })
+  hasGrammarError: boolean;
+
+  @Column({ type: 'text', nullable: true, name: 'grammar_correction' })
+  grammarCorrection: string;
+
+  @Column({ type: 'text', nullable: true, name: 'grammar_tips' })
+  grammarTips: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

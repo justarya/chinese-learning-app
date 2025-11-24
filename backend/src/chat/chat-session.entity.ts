@@ -24,6 +24,12 @@ export class ChatSession {
   @Column({ nullable: true })
   title: string;
 
+  @Column({ nullable: true })
+  scenario: string; // e.g., "at the park", "at a restaurant", "shopping"
+
+  @Column({ type: 'json', nullable: true, name: 'vocabulary_ids' })
+  vocabularyIds: string[]; // Selected vocabulary for this conversation
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
