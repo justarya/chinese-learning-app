@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
+import { Repository, LessThan, In } from 'typeorm';
 import { TranslationSentence } from './translation-sentence.entity';
 import { Vocabulary } from '../vocabulary/vocabulary.entity';
 import { OpenRouterService } from '../openrouter/openrouter.service';
@@ -145,9 +145,11 @@ export class TranslationSentenceService {
     }
 
     // Get the vocabulary words used in this sentence
-    const vocabulary = await this.vocabularyRepository.findByIds(
-      sentence.vocabularyUsed,
-    );
+    const vocabulary = await this.vocabularyRepository.find({
+      where: {
+        id: In(sentence.vocabularyUsed),
+      },
+    });
 
     return {
       ...sentence,
