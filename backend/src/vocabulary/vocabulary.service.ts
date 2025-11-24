@@ -114,7 +114,7 @@ export class VocabularyService {
     const total = await this.vocabularyRepository.count({ where: { userId } });
 
     const studied = await this.vocabularyRepository.count({
-      where: { userId },
+      // where: { userId },
       where: { userId, studiedCount: { $gt: 0 } as any },
     });
 
