@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Eye, EyeOff, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, ChevronLeft, ChevronRight, Loader, HelpCircle } from 'lucide-react';
 import { vocabularyService } from '../../services/vocabulary.service';
+import ExplanationPanel from '../../components/ExplanationPanel';
 
 function Flashcards() {
   const [vocabList, setVocabList] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showExplanation, setShowExplanation] = useState(false);
 
   useEffect(() => {
     loadVocabulary();
@@ -119,8 +121,8 @@ function Flashcards() {
         )}
       </div>
 
-      {/* Show/Hide Answer Button */}
-      <div className="flex justify-center mb-6">
+      {/* Show/Hide Answer and Explain Buttons */}
+      <div className="flex justify-center gap-3 mb-6">
         <button
           onClick={toggleAnswer}
           className={`flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-lg text-white text-base sm:text-lg font-semibold transition-all transform hover:scale-105 ${
@@ -140,6 +142,14 @@ function Flashcards() {
               Show Answer
             </>
           )}
+        </button>
+
+        <button
+          onClick={() => setShowExplanation(true)}
+          className="flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-base sm:text-lg font-semibold transition-all transform hover:scale-105"
+        >
+          <HelpCircle className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
+          Explain
         </button>
       </div>
 
@@ -171,6 +181,14 @@ function Flashcards() {
           <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 ml-1 sm:ml-2" />
         </button>
       </div>
+
+      {/* Explanation Panel */}
+      {showExplanation && (
+        <ExplanationPanel
+          vocabularyId={currentCard.id}
+          onClose={() => setShowExplanation(false)}
+        />
+      )}
     </div>
   );
 }

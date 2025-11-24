@@ -180,4 +180,210 @@ Keep it concise and educational.`;
       throw new Error('Failed to get grammar explanation');
     }
   }
+
+  async generateSentence(
+    vocabulary: Array<{ chinese: string; pinyin: string; english: string }>,
+    mode: 'en-zh' | 'zh-en',
+  ): Promise<{ english: string; chinese: string; difficulty: string }> {
+    const vocabList = vocabulary
+      .map((v) => `${v.chinese} (${v.pinyin}) - ${v.english}`)
+      .join(', ');
+
+    const prompt = `You are a Chinese language learning assistant. Generate a natural sentence that incorporates these vocabulary words: ${vocabList}
+
+Requirements:
+1. The sentence must use ALL of the provided vocabulary words naturally
+2. The sentence should be grammatically correct and sound natural
+3. Determine the appropriate difficulty level based on the vocabulary (beginner, intermediate, or advanced)
+4. Keep the sentence simple enough for language learners
+5. The sentence should make practical sense
+
+Return ONLY a valid JSON object with this exact structure (no markdown, no code blocks):
+{
+  "english": "English sentence here",
+  "chinese": "中文句子在这里",
+  "difficulty": "beginner"
+}`;
+
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/chat/completions`,
+        {
+          model: this.model,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+          max_tokens: 500,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': this.configService.get('FRONTEND_URL'),
+            'X-Title': 'Chinese Learning App',
+          },
+        },
+      );
+
+      const content = response.data.choices[0].message.content;
+      this.logger.log('Generated sentence:', content);
+
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Invalid response format from AI');
+      }
+
+      return JSON.parse(jsonMatch[0]);
+    } catch (error) {
+      this.logger.error('Error generating sentence:', error.message);
+      throw new Error('Failed to generate sentence');
+    }
+  }
+
+  async validateTranslation(
+    questionSentence: string,
+    correctAnswer: string,
+    userAnswer: string,
+    mode: 'en-zh' | 'zh-en',
+  ): Promise<{ isCorrect: boolean; feedback: string }> {
+    const sourceLanguage = mode === 'en-zh' ? 'English' : 'Chinese';
+    const targetLanguage = mode === 'en-zh' ? 'Chinese' : 'English';
+
+    const prompt = `You are a Chinese language learning assistant evaluating a translation.
+
+Original ${sourceLanguage} sentence: "${questionSentence}"
+Expected ${targetLanguage} translation: "${correctAnswer}"
+User's ${targetLanguage} translation: "${userAnswer}"
+
+Evaluate if the user's translation is correct. Accept variations in wording as long as the meaning is preserved.
+
+Rules:
+1. Accept synonyms and different phrasings if meaning is the same
+2. Accept simplified or traditional Chinese characters
+3. Minor grammatical variations are acceptable if meaning is clear
+4. For Chinese, accept answers with or without punctuation
+5. Ignore case differences in English
+
+Return ONLY a valid JSON object (no markdown, no code blocks):
+{
+  "isCorrect": true,
+  "feedback": "Great job! Your translation captures the meaning perfectly."
+}
+
+OR
+
+{
+  "isCorrect": false,
+  "feedback": "Not quite right. The correct translation is '${correctAnswer}'. Your answer missed the nuance of..."
+}`;
+
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/chat/completions`,
+        {
+          model: this.model,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+          max_tokens: 300,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': this.configService.get('FRONTEND_URL'),
+            'X-Title': 'Chinese Learning App',
+          },
+        },
+      );
+
+      const content = response.data.choices[0].message.content;
+      this.logger.log('Validation result:', content);
+
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Invalid response format from AI');
+      }
+
+      return JSON.parse(jsonMatch[0]);
+    } catch (error) {
+      this.logger.error('Error validating translation:', error.message);
+      throw new Error('Failed to validate translation');
+    }
+  }
+
+  async explainVocabulary(
+    chinese: string,
+    pinyin: string,
+    english: string,
+    example?: string,
+  ): Promise<string> {
+    const prompt = `You are a Chinese language learning assistant. Provide a detailed but concise explanation for this vocabulary word:
+
+Chinese: ${chinese}
+Pinyin: ${pinyin}
+English: ${english}
+${example ? `Example: ${example}` : ''}
+
+Please explain:
+1. Character breakdown (if applicable) - what each character means
+2. Usage context and common situations where this word is used
+3. Any cultural notes or nuances
+4. Common phrases or collocations with this word
+5. Tips for remembering this word
+
+Keep the explanation clear, educational, and practical for language learners. Use about 150-200 words.`;
+
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/chat/completions`,
+        {
+          model: this.model,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.5,
+          max_tokens: 600,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': this.configService.get('FRONTEND_URL'),
+            'X-Title': 'Chinese Learning App',
+          },
+        },
+      );
+
+      return response.data.choices[0].message.content;
+    } catch (error) {
+      this.logger.error('Error explaining vocabulary:', error.message);
+      throw new Error('Failed to generate vocabulary explanation');
+    }
+  }
+
+  async chatWithContext(
+    messages: Array<{ role: string; content: string }>,
+  ): Promise<string> {
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/chat/completions`,
+        {
+          model: this.model,
+          messages: messages.slice(-15), // Last 15 messages for context
+          temperature: 0.7,
+          max_tokens: 500,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': this.configService.get('FRONTEND_URL'),
+            'X-Title': 'Chinese Learning App',
+          },
+        },
+      );
+
+      return response.data.choices[0].message.content;
+    } catch (error) {
+      this.logger.error('Error in chat with context:', error.message);
+      throw new Error('Failed to get AI response');
+    }
+  }
 }
