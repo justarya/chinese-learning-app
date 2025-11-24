@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 function AuthCallback() {
+  const navigate = useNavigate();
   const { login } = useAuth();
 
   useEffect(() => {
@@ -10,10 +12,10 @@ function AuthCallback() {
 
     if (token) {
       login(token).then(() => {
-        window.location.href = '/';
+        navigate('/', { replace: true });
       });
     }
-  }, [login]);
+  }, [login, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">

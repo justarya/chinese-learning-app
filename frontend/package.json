@@ -11,6 +11,7 @@
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-router-dom": "^6.21.3",
     "lucide-react": "^0.344.0",
     "@react-oauth/google": "^0.12.1",
     "axios": "^1.6.5"
