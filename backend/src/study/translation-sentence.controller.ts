@@ -27,10 +27,10 @@ export class TranslationSentenceController {
 
     return {
       id: sentence.id,
-      questionSentence: mode === 'en-zh' ? sentence.englishSentence : sentence.chineseSentence,
+      questionSentence: body.mode === 'en-zh' ? sentence.englishSentence : sentence.chineseSentence,
       englishSentence: sentence.englishSentence,
       chineseSentence: sentence.chineseSentence,
-      mode,
+      mode: body.mode,
       vocabularyUsed: sentenceWithVocab.vocabulary,
       difficulty: sentence.difficulty,
     };
