@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Send, Loader, MessageCircle } from 'lucide-react';
 import api from '../services/api';
+import MarkdownRenderer from './MarkdownRenderer';
 
 function ExplanationPanel({ vocabularyId, onClose }) {
   const [explanation, setExplanation] = useState(null);
@@ -120,8 +121,8 @@ function ExplanationPanel({ vocabularyId, onClose }) {
                 <MessageCircle className="w-5 h-5 mr-2 text-blue-600" />
                 Detailed Explanation
               </h3>
-              <div className="text-gray-700 whitespace-pre-line leading-relaxed">
-                {explanation.explanation}
+              <div className="text-gray-700 leading-relaxed">
+                <MarkdownRenderer content={explanation.explanation} />
               </div>
             </div>
 
@@ -142,7 +143,13 @@ function ExplanationPanel({ vocabularyId, onClose }) {
                             : 'bg-gray-100 text-gray-800'
                         }`}
                       >
-                        <p className="text-sm whitespace-pre-line">{msg.content}</p>
+                        {msg.role === 'user' ? (
+                          <p className="text-sm whitespace-pre-line">{msg.content}</p>
+                        ) : (
+                          <div className="text-sm">
+                            <MarkdownRenderer content={msg.content} />
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

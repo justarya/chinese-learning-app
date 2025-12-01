@@ -19,24 +19,23 @@ export class TranslationSentenceService {
     userId: string,
     mode: 'en-zh' | 'zh-en',
   ): Promise<TranslationSentence> {
-    // First, check if we have an existing sentence in the pool with practice_count < 5
-    const existingSentence = await this.sentenceRepository.findOne({
+    // First, check if there's a sentence that was answered incorrectly (needs retry)
+    const incorrectSentence = await this.sentenceRepository.findOne({
       where: {
         userId,
         mode,
-        practiceCount: LessThan(5),
+        lastAnswerCorrect: false,
       },
       order: {
-        practiceCount: 'ASC', // Get least practiced first
-        createdAt: 'ASC',
+        updatedAt: 'DESC', // Get most recently attempted first
       },
     });
 
-    if (existingSentence) {
-      return existingSentence;
+    if (incorrectSentence) {
+      return incorrectSentence;
     }
 
-    // No existing sentence available, generate a new one
+    // No incorrect sentence, generate a new one
     return await this.createNewSentence(userId, mode);
   }
 
@@ -86,6 +85,7 @@ export class TranslationSentenceService {
       practiceCount: 0,
       correctCount: 0,
       difficulty: generatedSentence.difficulty,
+      lastAnswerCorrect: null, // Not answered yet
     });
 
     return await this.sentenceRepository.save(sentence);
@@ -121,10 +121,13 @@ export class TranslationSentenceService {
       sentence.mode,
     );
 
-    // Update practice count and correct count
+    // Update practice count, correct count, and last answer correctness
     sentence.practiceCount += 1;
     if (validation.isCorrect) {
       sentence.correctCount += 1;
+      sentence.lastAnswerCorrect = true; // Mark as correct so next generation creates new question
+    } else {
+      sentence.lastAnswerCorrect = false; // Mark as incorrect so next generation returns same question
     }
     await this.sentenceRepository.save(sentence);
 
@@ -133,6 +136,24 @@ export class TranslationSentenceService {
       feedback: validation.feedback,
       correctAnswer,
     };
+  }
+
+  async skipSentence(
+    userId: string,
+    sentenceId: string,
+  ): Promise<void> {
+    const sentence = await this.sentenceRepository.findOne({
+      where: { id: sentenceId, userId },
+    });
+
+    if (!sentence) {
+      throw new Error('Sentence not found');
+    }
+
+    // Mark as "skipped" by setting lastAnswerCorrect to true
+    // This ensures it won't show up again when generating new sentences
+    sentence.lastAnswerCorrect = true;
+    await this.sentenceRepository.save(sentence);
   }
 
   async getSentenceWithVocabulary(sentenceId: string, userId: string) {

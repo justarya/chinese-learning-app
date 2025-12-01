@@ -14,6 +14,13 @@ export const translationService = {
     return response.data;
   },
 
+  async skipSentence(sentenceId) {
+    const response = await api.post('/api/study/translation/skip', {
+      sentenceId,
+    });
+    return response.data;
+  },
+
   async getSentence(sentenceId) {
     const response = await api.get(`/api/study/translation/sentence/${sentenceId}`);
     return response.data;

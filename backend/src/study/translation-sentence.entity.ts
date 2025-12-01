@@ -40,6 +40,9 @@ export class TranslationSentence {
   @Column({ type: 'text', nullable: true })
   difficulty: string; // 'beginner', 'intermediate', 'advanced'
 
+  @Column({ name: 'last_answer_correct', type: 'boolean', nullable: true })
+  lastAnswerCorrect: boolean; // Track if the last answer was correct
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

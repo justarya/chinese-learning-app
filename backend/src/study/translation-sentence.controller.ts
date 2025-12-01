@@ -47,6 +47,16 @@ export class TranslationSentenceController {
     return result;
   }
 
+  @Post('skip')
+  async skipSentence(
+    @Request() req,
+    @Body() body: { sentenceId: string },
+  ) {
+    const userId = req.user.id;
+    await this.translationSentenceService.skipSentence(userId, body.sentenceId);
+    return { success: true };
+  }
+
   @Get('sentence/:id')
   async getSentence(@Request() req, @Param('id') sentenceId: string) {
     const userId = req.user.id;
