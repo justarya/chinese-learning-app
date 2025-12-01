@@ -19,6 +19,40 @@ function Flashcards() {
     setShowAnswer(false);
   }, [currentIndex]);
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // Ignore if user is typing in an input field
+      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      switch (event.key) {
+        case 'ArrowLeft':
+          event.preventDefault();
+          handlePrevious();
+          break;
+        case 'ArrowRight':
+          event.preventDefault();
+          handleNext();
+          break;
+        case ' ':
+          event.preventDefault();
+          toggleAnswer();
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [currentIndex, showAnswer, vocabList]); // Dependencies ensure handlers use current state
+
   const loadVocabulary = async () => {
     try {
       const data = await vocabularyService.getAll(1, 1000);
@@ -105,7 +139,7 @@ function Flashcards() {
             <div className="text-2xl sm:text-3xl text-gray-600 mb-6 sm:mb-8">
               {currentCard.pinyin}
             </div>
-            <p className="text-gray-500 text-sm sm:text-lg">(Click button below to flip)</p>
+            <p className="text-gray-500 text-sm sm:text-lg">(Press Space or click button below to flip)</p>
           </div>
         ) : (
           <div className="text-center w-full">
@@ -151,6 +185,15 @@ function Flashcards() {
           <HelpCircle className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
           Explain
         </button>
+      </div>
+
+      {/* Keyboard Shortcuts Hint */}
+      <div className="text-center mb-4">
+        <p className="text-xs sm:text-sm text-gray-500">
+          Keyboard shortcuts: <kbd className="px-2 py-1 bg-gray-200 rounded text-xs">←</kbd> Previous ·
+          <kbd className="px-2 py-1 bg-gray-200 rounded text-xs mx-1">Space</kbd> Flip ·
+          <kbd className="px-2 py-1 bg-gray-200 rounded text-xs">→</kbd> Next
+        </p>
       </div>
 
       {/* Navigation */}

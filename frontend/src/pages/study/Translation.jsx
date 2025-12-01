@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, Eye, Loader, BookOpen, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Check, Eye, Loader, BookOpen, HelpCircle, RotateCcw, SkipForward } from 'lucide-react';
 import { translationService } from '../../services/translation.service';
 import { studyService } from '../../services/study.service';
 import ExplanationPanel from '../../components/ExplanationPanel';
@@ -13,14 +13,15 @@ function Translation() {
   const [validationResult, setValidationResult] = useState(null);
   const [scores, setScores] = useState({ translation: 0, total: 0 });
   const [loading, setLoading] = useState(false);
-  const [generating, setGenerating] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [selectedVocabId, setSelectedVocabId] = useState(null);
+  const [difficulty, setDifficulty] = useState(null); // null means 'all'
 
   useEffect(() => {
     loadProgress();
     generateNewSentence();
-  }, [mode]);
+  }, [mode, difficulty]); // Regenerate when mode or difficulty changes
 
   const loadProgress = async () => {
     try {
@@ -41,7 +42,7 @@ function Translation() {
     setValidationResult(null);
 
     try {
-      const sentence = await translationService.generateSentence(mode);
+      const sentence = await translationService.generateSentence(mode, difficulty);
       setCurrentSentence(sentence);
     } catch (error) {
       console.error('Error generating sentence:', error);
@@ -89,6 +90,25 @@ function Translation() {
       feedback: 'You peeked at the answer!',
       correctAnswer: mode === 'en-zh' ? currentSentence.chineseSentence : currentSentence.englishSentence
     });
+  };
+
+  const tryAgain = () => {
+    setUserAnswer('');
+    setShowResult(false);
+    setValidationResult(null);
+  };
+
+  const skipQuestion = async () => {
+    if (!currentSentence) return;
+
+    setGenerating(true);
+    try {
+      await translationService.skipSentence(currentSentence.id);
+      await generateNewSentence();
+    } catch (error) {
+      console.error('Error skipping question:', error);
+      setGenerating(false);
+    }
   };
 
   const scorePercentage = scores.total > 0 ? Math.round((scores.translation / scores.total) * 100) : 0;
@@ -186,6 +206,53 @@ function Translation() {
         <p className="text-sm sm:text-base text-gray-600">
           {scores.translation} correct out of {scores.total} attempts
         </p>
+
+        {/* Difficulty Selector */}
+        <div className="mt-4">
+          <p className="text-xs sm:text-sm text-gray-600 mb-2">Difficulty Level:</p>
+          <div className="flex justify-center gap-2 flex-wrap">
+            <button
+              onClick={() => setDifficulty(null)}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+                difficulty === null
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setDifficulty('beginner')}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+                difficulty === 'beginner'
+                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Beginner
+            </button>
+            <button
+              onClick={() => setDifficulty('intermediate')}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+                difficulty === 'intermediate'
+                  ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Intermediate
+            </button>
+            <button
+              onClick={() => setDifficulty('advanced')}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+                difficulty === 'advanced'
+                  ? 'bg-gradient-to-r from-red-500 to-red-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Advanced
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 mb-6">
@@ -228,15 +295,24 @@ function Translation() {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
                 onClick={checkAnswer}
-                disabled={!userAnswer.trim()}
+                disabled={!userAnswer.trim() || loading}
                 className={`flex-1 flex items-center justify-center px-6 py-3 rounded-lg text-white text-base sm:text-lg font-semibold transition-all transform hover:scale-105 ${
-                  !userAnswer.trim()
+                  !userAnswer.trim() || loading
                     ? 'bg-gray-300 cursor-not-allowed'
                     : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
                 }`}
               >
-                <Check className="w-5 h-5 mr-2" />
-                Check Answer
+                {loading ? (
+                  <>
+                    <Loader className="w-5 h-5 mr-2 animate-spin" />
+                    Checking...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-5 h-5 mr-2" />
+                    Check Answer
+                  </>
+                )}
               </button>
 
               <button
@@ -295,12 +371,51 @@ function Translation() {
               )}
             </div>
 
-            <button
-              onClick={generateNewSentence}
-              className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-base sm:text-lg font-semibold transition-all transform hover:scale-105"
-            >
-              Next Question
-            </button>
+            {validationResult?.isCorrect ? (
+              // Show "Next Question" button if answer was correct
+              <button
+                onClick={generateNewSentence}
+                disabled={generating}
+                className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-base sm:text-lg font-semibold transition-all transform hover:scale-105"
+              >
+                {generating ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader className="w-5 h-5 animate-spin" />
+                    Loading...
+                  </span>
+                ) : (
+                  'Next Question'
+                )}
+              </button>
+            ) : (
+              // Show "Try Again" and "Skip" buttons if answer was incorrect
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <button
+                  onClick={tryAgain}
+                  className="flex-1 flex items-center justify-center px-6 py-3 rounded-lg bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white text-base sm:text-lg font-semibold transition-all transform hover:scale-105"
+                >
+                  <RotateCcw className="w-5 h-5 mr-2" />
+                  Try Again
+                </button>
+                <button
+                  onClick={skipQuestion}
+                  disabled={generating}
+                  className="flex items-center justify-center px-6 py-3 rounded-lg bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white text-base sm:text-lg font-semibold transition-all transform hover:scale-105"
+                >
+                  {generating ? (
+                    <>
+                      <Loader className="w-5 h-5 mr-2 animate-spin" />
+                      Skipping...
+                    </>
+                  ) : (
+                    <>
+                      <SkipForward className="w-5 h-5 mr-2" />
+                      Skip
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
