@@ -91,6 +91,8 @@ function Translation() {
     });
   };
 
+  const scorePercentage = scores.total > 0 ? Math.round((scores.translation / scores.total) * 100) : 0;
+
   if (generating) {
     return (
       <div className="max-w-4xl mx-auto p-4 sm:p-6">
@@ -115,14 +117,59 @@ function Translation() {
           <ArrowLeft className="w-5 h-5 mr-2" />
           Back to Home
         </Link>
-        <div className="bg-white rounded-lg shadow-md p-12 text-center">
-          <p className="text-gray-600 text-lg">No vocabulary available. Add some first!</p>
+
+        <div className="text-center mb-6">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+            {mode === 'en-zh' ? 'English → Chinese' : 'Chinese → English'}
+          </h2>
+          <p className="text-lg sm:text-xl text-green-600 font-semibold">Score: {scorePercentage}%</p>
+          <p className="text-sm sm:text-base text-gray-600">
+            {scores.translation} correct out of {scores.total} attempts
+          </p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-xl p-12 text-center">
+          <div className="mb-6">
+            <BookOpen className="w-20 h-20 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Ready to Practice?</h3>
+            <p className="text-gray-600 mb-2">
+              Click the button below to generate a new translation sentence.
+            </p>
+            <p className="text-sm text-gray-500">
+              The AI will create a sentence using your vocabulary words.
+            </p>
+          </div>
+
+          <button
+            onClick={generateNewSentence}
+            disabled={generating}
+            className={`px-8 py-4 rounded-lg text-white text-lg font-semibold transition-all transform hover:scale-105 ${
+              generating
+                ? 'bg-gray-300 cursor-not-allowed'
+                : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg'
+            }`}
+          >
+            {generating ? (
+              <span className="flex items-center gap-2">
+                <Loader className="w-5 h-5 animate-spin" />
+                Generating...
+              </span>
+            ) : (
+              'Generate Sentence'
+            )}
+          </button>
+
+          {scores.total === 0 && (
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-800">
+                💡 <strong>Tip:</strong> Make sure you have some vocabulary added first. You can import vocabulary from the home page!
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );
   }
-
-  const scorePercentage = scores.total > 0 ? Math.round((scores.translation / scores.total) * 100) : 0;
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
