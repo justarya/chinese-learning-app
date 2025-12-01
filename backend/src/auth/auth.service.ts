@@ -33,6 +33,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         picture: user.picture,
+        isWhitelisted: user.isWhitelisted,
       },
     };
   }

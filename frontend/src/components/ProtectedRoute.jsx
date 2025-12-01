@@ -1,9 +1,10 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Loader } from 'lucide-react';
+import WhitelistWall from './WhitelistWall';
 
 function ProtectedRoute() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, isWhitelisted, loading, user } = useAuth();
 
   if (loading) {
     return (
@@ -16,7 +17,15 @@ function ProtectedRoute() {
     );
   }
 
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isWhitelisted) {
+    return <WhitelistWall user={user} />;
+  }
+
+  return <Outlet />;
 }
 
 export default ProtectedRoute;

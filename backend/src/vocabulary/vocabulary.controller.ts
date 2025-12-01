@@ -14,9 +14,10 @@ import { VocabularyService } from './vocabulary.service';
 import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import { ImportNotesDto } from './dto/import-notes.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { WhitelistGuard } from '../auth/guards/whitelist.guard';
 
 @Controller('api/vocabulary')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, WhitelistGuard)
 export class VocabularyController {
   constructor(private readonly vocabularyService: VocabularyService) {}
 

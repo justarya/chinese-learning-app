@@ -40,6 +40,17 @@ export class AuthController {
       email: req.user.email,
       name: req.user.name,
       picture: req.user.picture,
+      isWhitelisted: req.user.isWhitelisted,
+    };
+  }
+
+  @Get('whitelist-status')
+  @UseGuards(JwtAuthGuard)
+  async getWhitelistStatus(@Req() req: any) {
+    return {
+      isWhitelisted: req.user.isWhitelisted,
+      email: req.user.email,
+      contactEmail: 'justaryaid@gmail.com',
     };
   }
 

@@ -12,9 +12,10 @@ import { ChatService } from './chat.service';
 import { SendMessageDto } from './dto/send-message.dto';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { WhitelistGuard } from '../auth/guards/whitelist.guard';
 
 @Controller('api/chat')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, WhitelistGuard)
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 

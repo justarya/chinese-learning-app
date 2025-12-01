@@ -10,9 +10,10 @@ import { StudyService } from './study.service';
 import { CreateStudySessionDto } from './dto/create-study-session.dto';
 import { CreateFlashcardReviewDto } from './dto/create-flashcard-review.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { WhitelistGuard } from '../auth/guards/whitelist.guard';
 
 @Controller('api/study')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, WhitelistGuard)
 export class StudyController {
   constructor(private readonly studyService: StudyService) {}
 
