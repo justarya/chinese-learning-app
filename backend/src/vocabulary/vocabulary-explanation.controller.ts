@@ -9,7 +9,7 @@ export class VocabularyExplanationController {
 
   @Get(':vocabularyId')
   async getExplanation(@Request() req, @Param('vocabularyId') vocabularyId: string) {
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const explanation = await this.explanationService.getOrCreateExplanation(userId, vocabularyId);
 
     return {
@@ -27,7 +27,7 @@ export class VocabularyExplanationController {
     @Param('vocabularyId') vocabularyId: string,
     @Body('message') message: string,
   ) {
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const result = await this.explanationService.chatAboutVocabulary(
       userId,
       vocabularyId,

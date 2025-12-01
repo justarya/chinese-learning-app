@@ -12,7 +12,7 @@ export class TranslationSentenceController {
     @Request() req,
     @Body('mode') mode: 'en-zh' | 'zh-en',
   ) {
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const sentence = await this.translationSentenceService.generateSentence(userId, mode);
 
     // Get vocabulary details
@@ -37,7 +37,7 @@ export class TranslationSentenceController {
     @Request() req,
     @Body() body: { sentenceId: string; userAnswer: string },
   ) {
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const result = await this.translationSentenceService.validateAnswer(
       userId,
       body.sentenceId,
@@ -49,7 +49,7 @@ export class TranslationSentenceController {
 
   @Get('sentence/:id')
   async getSentence(@Request() req, @Param('id') sentenceId: string) {
-    const userId = req.user.userId;
+    const userId = req.user.id;
     return await this.translationSentenceService.getSentenceWithVocabulary(sentenceId, userId);
   }
 }
