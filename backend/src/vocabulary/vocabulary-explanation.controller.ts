@@ -1,9 +1,10 @@
 import { Controller, Post, Get, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { WhitelistGuard } from '../auth/guards/whitelist.guard';
 import { VocabularyExplanationService } from './vocabulary-explanation.service';
 
 @Controller('api/vocabulary/explanation')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, WhitelistGuard)
 export class VocabularyExplanationController {
   constructor(private explanationService: VocabularyExplanationService) {}
 

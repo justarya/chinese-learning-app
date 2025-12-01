@@ -1,9 +1,10 @@
 import { Controller, Post, Get, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { WhitelistGuard } from '../auth/guards/whitelist.guard';
 import { TranslationSentenceService } from './translation-sentence.service';
 
 @Controller('api/study/translation')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, WhitelistGuard)
 export class TranslationSentenceController {
   constructor(private translationSentenceService: TranslationSentenceService) {}
 

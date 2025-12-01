@@ -29,6 +29,9 @@ export class User {
   @Column({ nullable: true, length: 500 })
   picture: string;
 
+  @Column({ name: 'is_whitelisted', default: false })
+  isWhitelisted: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

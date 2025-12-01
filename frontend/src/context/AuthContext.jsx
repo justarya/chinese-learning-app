@@ -58,6 +58,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     isAuthenticated: !!user,
+    isWhitelisted: user?.isWhitelisted ?? false,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
