@@ -13,13 +13,12 @@ function Translation() {
   const [validationResult, setValidationResult] = useState(null);
   const [scores, setScores] = useState({ translation: 0, total: 0 });
   const [loading, setLoading] = useState(false);
-  const [generating, setGenerating] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [selectedVocabId, setSelectedVocabId] = useState(null);
 
   useEffect(() => {
     loadProgress();
-    generateNewSentence();
   }, [mode]);
 
   const loadProgress = async () => {
