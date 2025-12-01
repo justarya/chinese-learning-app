@@ -18,14 +18,22 @@ export class TranslationSentenceService {
   async generateSentence(
     userId: string,
     mode: 'en-zh' | 'zh-en',
+    difficulty?: 'beginner' | 'intermediate' | 'advanced',
   ): Promise<TranslationSentence> {
     // First, check if there's a sentence that was answered incorrectly (needs retry)
+    const whereCondition: any = {
+      userId,
+      mode,
+      lastAnswerCorrect: false,
+    };
+
+    // If difficulty is specified, filter by difficulty too
+    if (difficulty) {
+      whereCondition.difficulty = difficulty;
+    }
+
     const incorrectSentence = await this.sentenceRepository.findOne({
-      where: {
-        userId,
-        mode,
-        lastAnswerCorrect: false,
-      },
+      where: whereCondition,
       order: {
         updatedAt: 'DESC', // Get most recently attempted first
       },
@@ -36,12 +44,13 @@ export class TranslationSentenceService {
     }
 
     // No incorrect sentence, generate a new one
-    return await this.createNewSentence(userId, mode);
+    return await this.createNewSentence(userId, mode, difficulty);
   }
 
   private async createNewSentence(
     userId: string,
     mode: 'en-zh' | 'zh-en',
+    difficulty?: 'beginner' | 'intermediate' | 'advanced',
   ): Promise<TranslationSentence> {
     // Get user's vocabulary - prioritize recent and unstudied
     const vocabulary = await this.vocabularyRepository.find({
@@ -57,11 +66,18 @@ export class TranslationSentenceService {
       throw new Error('No vocabulary available to generate sentences');
     }
 
-    // Select 2-5 random vocabulary words
-    const numWords = Math.min(
-      Math.floor(Math.random() * 4) + 2, // Random between 2-5
-      vocabulary.length,
-    );
+    // Select vocabulary based on difficulty
+    let numWords: number;
+    if (difficulty === 'beginner') {
+      numWords = Math.min(Math.floor(Math.random() * 2) + 2, vocabulary.length); // 2-3 words
+    } else if (difficulty === 'intermediate') {
+      numWords = Math.min(Math.floor(Math.random() * 2) + 3, vocabulary.length); // 3-4 words
+    } else if (difficulty === 'advanced') {
+      numWords = Math.min(Math.floor(Math.random() * 2) + 4, vocabulary.length); // 4-5 words
+    } else {
+      numWords = Math.min(Math.floor(Math.random() * 4) + 2, vocabulary.length); // 2-5 words (default)
+    }
+
     const selectedVocab = this.selectRandomItems(vocabulary, numWords);
 
     // Prepare vocabulary context for AI
@@ -69,10 +85,11 @@ export class TranslationSentenceService {
       .map((v) => `${v.chinese} (${v.pinyin}) - ${v.english}`)
       .join(', ');
 
-    // Call OpenRouter to generate sentence
+    // Call OpenRouter to generate sentence with specified difficulty
     const generatedSentence = await this.openRouterService.generateSentence(
       selectedVocab,
       mode,
+      difficulty,
     );
 
     // Save the new sentence

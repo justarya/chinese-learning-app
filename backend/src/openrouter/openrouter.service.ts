@@ -184,19 +184,29 @@ Keep it concise and educational.`;
   async generateSentence(
     vocabulary: Array<{ chinese: string; pinyin: string; english: string }>,
     mode: 'en-zh' | 'zh-en',
+    requestedDifficulty?: 'beginner' | 'intermediate' | 'advanced',
   ): Promise<{ english: string; chinese: string; difficulty: string }> {
     const vocabList = vocabulary
       .map((v) => `${v.chinese} (${v.pinyin}) - ${v.english}`)
       .join(', ');
+
+    const difficultyInstruction = requestedDifficulty
+      ? `Generate a ${requestedDifficulty} level sentence.`
+      : 'Determine the appropriate difficulty level based on the vocabulary (beginner, intermediate, or advanced).';
 
     const prompt = `You are a Chinese language learning assistant. Generate a natural sentence that incorporates these vocabulary words: ${vocabList}
 
 Requirements:
 1. The sentence must use ALL of the provided vocabulary words naturally
 2. The sentence should be grammatically correct and sound natural
-3. Determine the appropriate difficulty level based on the vocabulary (beginner, intermediate, or advanced)
-4. Keep the sentence simple enough for language learners
+3. ${difficultyInstruction}
+4. Keep the sentence appropriate for language learners
 5. The sentence should make practical sense
+
+Difficulty guidelines:
+- Beginner: Simple grammar, common words, short sentences (5-10 characters)
+- Intermediate: More complex grammar structures, compound sentences (10-15 characters)
+- Advanced: Complex grammar, idiomatic expressions, longer sentences (15+ characters)
 
 Return ONLY a valid JSON object with this exact structure (no markdown, no code blocks):
 {

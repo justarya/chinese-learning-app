@@ -10,10 +10,14 @@ export class TranslationSentenceController {
   @Post('generate-sentence')
   async generateSentence(
     @Request() req,
-    @Body('mode') mode: 'en-zh' | 'zh-en',
+    @Body() body: { mode: 'en-zh' | 'zh-en'; difficulty?: 'beginner' | 'intermediate' | 'advanced' },
   ) {
     const userId = req.user.id;
-    const sentence = await this.translationSentenceService.generateSentence(userId, mode);
+    const sentence = await this.translationSentenceService.generateSentence(
+      userId,
+      body.mode,
+      body.difficulty,
+    );
 
     // Get vocabulary details
     const sentenceWithVocab = await this.translationSentenceService.getSentenceWithVocabulary(

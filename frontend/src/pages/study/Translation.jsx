@@ -16,10 +16,12 @@ function Translation() {
   const [generating, setGenerating] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [selectedVocabId, setSelectedVocabId] = useState(null);
+  const [difficulty, setDifficulty] = useState(null); // null means 'all'
 
   useEffect(() => {
     loadProgress();
-  }, [mode]);
+    generateNewSentence();
+  }, [mode, difficulty]); // Regenerate when mode or difficulty changes
 
   const loadProgress = async () => {
     try {
@@ -40,7 +42,7 @@ function Translation() {
     setValidationResult(null);
 
     try {
-      const sentence = await translationService.generateSentence(mode);
+      const sentence = await translationService.generateSentence(mode, difficulty);
       setCurrentSentence(sentence);
     } catch (error) {
       console.error('Error generating sentence:', error);
@@ -204,6 +206,53 @@ function Translation() {
         <p className="text-sm sm:text-base text-gray-600">
           {scores.translation} correct out of {scores.total} attempts
         </p>
+
+        {/* Difficulty Selector */}
+        <div className="mt-4">
+          <p className="text-xs sm:text-sm text-gray-600 mb-2">Difficulty Level:</p>
+          <div className="flex justify-center gap-2 flex-wrap">
+            <button
+              onClick={() => setDifficulty(null)}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+                difficulty === null
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setDifficulty('beginner')}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+                difficulty === 'beginner'
+                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Beginner
+            </button>
+            <button
+              onClick={() => setDifficulty('intermediate')}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+                difficulty === 'intermediate'
+                  ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Intermediate
+            </button>
+            <button
+              onClick={() => setDifficulty('advanced')}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+                difficulty === 'advanced'
+                  ? 'bg-gradient-to-r from-red-500 to-red-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Advanced
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 mb-6">
